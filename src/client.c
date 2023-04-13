@@ -1,0 +1,53 @@
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <wait.h>
+#include <limits.h>
+
+int main(int argc, char ** argv){
+    
+    
+    /*int password = open("/etc/passwd",O_RDONLY);
+    if(password<0){
+        perror("error on open passwd");
+    }
+    int saida = open("saida.txt",O_WRONLY | O_CREAT | O_TRUNC);
+    if(saida<0){
+        perror("error on open saida");
+    }
+    int err = open("error.txt",O_WRONLY | O_CREAT | O_TRUNC);
+    if(err<0){    
+        perror("error on open error");
+    }
+
+    int in = dup(0);
+    int out = dup(1);
+    int error = dup(2);
+    
+    dup2(password,0);
+    dup2(saida,1);
+    dup2(err,2);
+    close(password);
+    close(saida);
+    close(err);
+
+    int fd = fork();
+    if(fd==0){
+        int read_res;
+        char buf[30];
+        while((read_res = read(password,&buf,30))<=30){
+        write(saida,&buf,read_res);
+        }
+    }
+      
+    
+
+    dup2(out,1);
+    write(1,"TERMINEI",8);
+    */
+    return 0;
+}
