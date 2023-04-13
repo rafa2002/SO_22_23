@@ -24,6 +24,8 @@ int main(int argc, char ** argv){
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
             armazenar_info_processo(pid,comandos,&timestamp);
+            //Este printf é para imprimir no stdout o comando a executar informando assim o user
+            printf("PID[%d] para executar %s %s\n",pid,argv[3],argv[i]);
             printf("O programa (argv[2]) é: %s,\n e o argumento (argv[%d]) é: %s",argv[2],i,argv[i]);
             execvp(argv[2],argv[i]);
         }
