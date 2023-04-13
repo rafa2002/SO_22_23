@@ -7,10 +7,27 @@
 #include <unistd.h>
 #include <wait.h>
 #include <limits.h>
+#include <time.h>
+#include "monitor.h"
 
 int main(int argc, char ** argv){
     
-    
+    printf("O que o utilizador mandou executar - [%s]\n",argv);
+
+    printf("argv[0] = %s,\n,argv[1] = %s\n",argv[0],argv[1]);
+    for(int i = 3; i < argc; i++){
+        int pid;
+        if((pid=fork())==0){
+            //Este é o filho
+            // armazenar_info_processo(int pid, char ** comando, struct tm *timestamp)
+            char comandos[2] = {argv[3],argv[i]};
+            time_t t = time(NULL);
+            struct tm *timestamp = localtime(&t);
+            armazenar_info_processo(pid,comandos,&timestamp);
+            printf("O programa (argv[2]) é: %s,\n e o argumento (argv[%d]) é: %s",argv[2],i,argv[i]);
+            execvp(argv[2],argv[i]);
+        }
+    }
     /*int password = open("/etc/passwd",O_RDONLY);
     if(password<0){
         perror("error on open passwd");

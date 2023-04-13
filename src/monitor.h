@@ -1,0 +1,1 @@
+void armazenar_info_processo(int pid, char ** comando, struct tm *timestamp);
