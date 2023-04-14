@@ -15,19 +15,33 @@ int main(int argc, char ** argv){
     printf("O que o utilizador mandou executar - [%s]\n",argv);
 
     printf("argv[0] = %s,\n,argv[1] = %s\n",argv[0],argv[1]);
-    for(int i = 3; i < argc; i++){
+
+    char *arg = argv[2];
+    int count = 0;
+    char * token;
+    if(arg!=NULL)
+        {   
+            count = 1;
+            token = strtok(arg," ");
+            while(token!=NULL){
+                count++;
+                printf("O token é :%s",token);
+                token = strtok(NULL," ");
+            }
+        }
+    for(int i = 1; i < count; i++){
         int pid;
         if((pid=fork())==0){
             //Este é o filho
             // armazenar_info_processo(int pid, char ** comando, struct tm *timestamp)
-            char comandos[2] = {argv[3],argv[i]};
+            char comandos[2] = {token[0],token[i]};
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
             armazenar_info_processo(pid,comandos,&timestamp);
             //Este printf é para imprimir no stdout o comando a executar informando assim o user
-            printf("PID[%d] para executar %s %s\n",pid,argv[3],argv[i]);
-            printf("O programa (argv[2]) é: %s,\n e o argumento (argv[%d]) é: %s",argv[2],i,argv[i]);
-            execvp(argv[2],argv[i]);
+            printf("PID[%d] para executar %s %s\n",pid,token[0],token[i]);
+            printf("O programa (token[0]) é: %s,\n e o argumento (token[%d]) é: %s",token[0],i,token[i]);
+            execvp(token[0],token[i]);
         }
     }
     /*int password = open("/etc/passwd",O_RDONLY);
