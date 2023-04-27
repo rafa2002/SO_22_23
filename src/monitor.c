@@ -4,17 +4,19 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <wait.h>
+#include <windows.h>
+#include <io.h>
+// #include <unistd.h>
+// #include <wait.h>
 #include <limits.h>
 #include <time.h>
-#include "client.h"
+#include "tracer.h"
 
 void armazenar_info_processo(int pid, char ** comando, struct tm *timestamp){
     int log = open("log.txt",O_WRONLY | O_CREAT | O_TRUNC,0660);
-    char *buf;
+    char *buf = malloc(36 * sizeof(char));
     char tempo[20];
-    strftime(tempo,sizeof(tempo),"%Y-%m-%d %H:%M:%S",timestamp);
-    printf("Data formatada: %s\n",tempo);
-    write(log,&buf,sizeof(buf));
+    strftime(tempo,strlen(tempo),"%Y-%m-%d %H:%M:%S",timestamp);
+    sprintf(buf,"Data formatada: %s\n",tempo);
+    write(log,&buf,strlen(buf));
 }

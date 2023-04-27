@@ -4,8 +4,10 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <wait.h>
+#include <windows.h>
+#include <io.h>
+// #include <unistd.h>
+// #include <wait.h>
 #include <limits.h>
 #include <time.h>
 #include "monitor.h"
@@ -19,31 +21,40 @@ int main(int argc, char ** argv){
     char *arg = argv[2];
     int count = 0;
     char * token;
+    char **comandos = malloc(sizeof(arg)); 
     if(arg!=NULL)
         {   
-            count = 1;
             token = strtok(arg," ");
             while(token!=NULL){
+                comandos[count] = malloc(sizeof(token)+1);
+                comandos[count] = token;
                 count++;
                 printf("O token é :%s",token);
                 token = strtok(NULL," ");
+
             }
+
         }
-    for(int i = 1; i < count; i++){
         int pid;
         if((pid=fork())==0){
             //Este é o filho
             // armazenar_info_processo(int pid, char ** comando, struct tm *timestamp)
-            char comandos[2] = {token[0],token[i]};
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
+            char * aux = "O pid do processo que executa o comando pedido é: ";
+            char * pid_str = malloc(sizeof(int) + strlen(aux));
+            sprintf(pid_str,"O pid do processo que executa o comando pedido é: %d",pid);
+            write(1,pid_str,strlen(pid_str));
             armazenar_info_processo(pid,comandos,&timestamp);
             //Este printf é para imprimir no stdout o comando a executar informando assim o user
-            printf("PID[%d] para executar %s %s\n",pid,token[0],token[i]);
-            printf("O programa (token[0]) é: %s,\n e o argumento (token[%d]) é: %s",token[0],i,token[i]);
-            execvp(token[0],token[i]);
-        }
+            printf("PID[%d] para executar: ",pid);
+            for(int c = 1; c<size(comandos);c++){
+                printf("%s ",comandos[c]);
+                printf("\n");
+            }
+            execvp(comandos[0],&comandos);    
     }
+    
     /*int password = open("/etc/passwd",O_RDONLY);
     if(password<0){
         perror("error on open passwd");
