@@ -34,13 +34,10 @@ int main(int argc, char **argv) {
     while (running) {
         int bytes_lidos = 0;
         char byte_lido;
-        while(read(canal,&byte_lido, 1)){
+        while((bytes_lidos += read(canal,&byte_lido, 1))){
             // Se o byte lido for o caractere nulo, processa a mensagem
             if (byte_lido == '\0') {
                 printf("Mensagem recebida: %s\n", buffer);
-                // Aqui você pode processar a mensagem como desejar
-                // Reinicializa o buffer para a próxima mensagem
-                //buffer[0] = '\0';
                 strncat(buffer, &byte_lido, 1);
                 break;
             } else {
@@ -52,12 +49,13 @@ int main(int argc, char **argv) {
             perror("Erro ao ler do canal");
             exit(EXIT_FAILURE);
         } else if (bytes_lidos == 0) {
-            // Fim do arquivo
+            //Aqui vamos ter de fazer alguma coisa
+            write(canal,"NO MORE REQUESTS\n",sizeof("NO MORE REQUESTS\n"));
             break;
         }
         
-        if (bytes_read > 0) {
-            buffer[bytes_read] = '\0';
+        if (bytes_lidos > 0) {
+            buffer[bytes_lidos] = '\0';
 
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
@@ -71,22 +69,22 @@ int main(int argc, char **argv) {
 
                 // divide o comando em tokens
                 char *token;
-                char **comandos = malloc(sizeof(char*) * (MAX_COMMAND/2 + 1));
+                char **info = malloc(sizeof(char*) * (MAX_COMMAND/2 + 1));
                 int count = 0;
                 token = strtok(buffer, " ");
                 while (token != NULL) {
-                    comandos[count] = token;
+                    info[count] = token;
                     count++;
                     token = strtok(NULL, " ");
                 }
-                comandos[count] = NULL;
+                info[count] = NULL;
 
                 // executa o comando
-                execvp(comandos[0], comandos);
+                execvp(info[0], info);
                 perror("Erro ao executar o comando");
 
-                free(comandos);
-                exit(1);
+                free(info);
+                exit(PID);
             }
             else if (pid > 0) {
                 // pai
@@ -98,7 +96,7 @@ int main(int argc, char **argv) {
 
                 printf("Comando finalizado com status %d\n", status);
 
-                char message[MAX_COMMAND_LENGTH];
+                char message[MAX_COMMAND];
                 int tamanho_str = sprintf(message, "Ended PID %d %04d-%02d-%02d %02d:%02d:%02d\n", pid,
                     timestampfinal->tm_year + 1900, timestampfinal->tm_mon + 1, timestampfinal->tm_mday,
                     timestampfinal->tm_hour, timestampfinal->tm_min, timestampfinal->tm_sec);
