@@ -20,3 +20,9 @@ void armazenar_info_processo(int pid, char ** comando, struct tm *timestamp){
     sprintf(buf,"Data formatada: %s\n",tempo);
     write(log,&buf,strlen(buf));
 }
+
+
+int main(){
+    int comunicacao_cliente_servidor = mkfifo("comunicacao.txt");
+    
+}
