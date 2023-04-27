@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 
                 // divide o comando em tokens
                 char *token;
-                char **comandos = malloc(sizeof(char*) * (MAX_COMMAND_LENGTH/2 + 1));
+                char **comandos = malloc(sizeof(char*) * (MAX_COMMAND/2 + 1));
                 int count = 0;
                 token = strtok(buffer, " ");
                 while (token != NULL) {
