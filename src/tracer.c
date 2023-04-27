@@ -16,9 +16,9 @@ int main(int argc, char ** argv){
     
     printf("O que o utilizador mandou executar - [%s]\n",argv);
 
-    printf("argv[0] = %s,\n,argv[1] = %s\n",argv[0],argv[1]);
+    printf("argv[0] = %s,\n,argv[1] = %s\nargv[2] = %s",argv[0],argv[1],argv[2]);
     
-    char *arg = argv[2];
+    char *arg = argv[3];
     int count = 0;
     char * token;
     char **comandos = malloc(sizeof(char*)*256); 
@@ -34,8 +34,12 @@ int main(int argc, char ** argv){
 
             }
         }
+        int canal = open("canal", O_WRONLY, 0600);
+        char * message = malloc(sizeof(int) + sizeof(char)*50 + sizeof(time_t));
+        int tamanho_str = 0;
+
         int pid;
-        if(strcmp(argv[0], "status")==0){
+        if(strcmp(argv[1], "status")==0){
             pede_status();
         }
         else if((pid=fork())==0){
@@ -43,83 +47,49 @@ int main(int argc, char ** argv){
             // Extrai o timestamp do inicio antes da execução
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
-            char * aux = "Running PID : ";
-            char * pid_str = malloc(sizeof(int) + strlen(aux) + sizeof(time_t));
-            //Mensagem que o cliente escreve para o cliente e para o servidor
+            
+            
+            // Mensagem que o cliente escreve para o cliente e para o servidor
             // Mensagem format: Running PID valor_pid valor_hora
-            sprintf(pid_str,"Running PID %d %Y-%m-%d %H:%M:%S",pid,timestamp);
-            int canal = mkfifo("canal.txt");
-            // Escreve para o stdout a mensagem
-            write(1,pid_str,strlen(pid_str));
-            char copy = malloc(sizeof(char)*strlen(pid_str));
-            strcpy(copy, pid_str);
-            // Escreve para o servidor a mensagem
-            write(canal,copy,strlen(pid_str));
+            tamanho_str = sprintf(message,"Running PID %d %Y-%m-%d %H:%M:%S",pid,timestamp);
+            
 
-            armazenar_info_processo(pid,comandos,timestamp);
+            // Faço uma copia da string que quero escrever
+            char copy = malloc(sizeof(char)*tamanho_str);
+            strcpy(copy, tamanho_str);
+            // Escreve para o servidor a mensagem
+            write(canal,copy,tamanho_str);
+            // Escreve para o stdout a mensagem
+            write(1,message,tamanho_str);
+            
             //Este printf é para imprimir no stdout o comando a executar informando assim o user
             printf("PID[%d] para executar: ",pid);
             for(int c = 1; c<size(comandos);c++){
                 printf("%s ",comandos[c]);
                 printf("\n");
             }
-        execvp(comandos[0],comandos);
-        // Extrai o timestamp do fim após a execução
-        time_t tf = time(NULL);
-        struct tm *timestampfinal = localtime(&tf);
-        //double delta = (timestampfinal->tm_sec - timestamp->tm_sec) * 1000 + (timestampfinal->tm_msec - timestamp->tm_msec) / 1000;
-        //int delta = difftime(timestamp,timestampfinal);
-        
-        char * aux = "Ended in ms";
-        char * pid_str = malloc(sizeof(int) + strlen(aux));
-        sprintf(pid_str,"Ended in %d ms",delta);
-        write(1,pid_str,strlen(pid_str));
 
-    }
+            execvp(comandos[0],comandos);
+            
+    }   
+    else{
+            //Este é o pai
 
+            // Extrai o timestamp do fim após a execução
+            time_t tf = time(NULL);
+            struct tm *timestampfinal = localtime(&tf);
+
+            tamanho_str = sprintf(message,"Ended PID %d %Y-%m-%d %H:%M:%S",pid,timestampfinal);
+            write(1,message,tamanho_str);
             while(count>=0){
-                free(comandos[count]);
-                count--;
-            }
-            free(comandos);
-            wait(NULL);
-    /*int password = open("/etc/passwd",O_RDONLY);
-    if(password<0){
-        perror("error on open passwd");
-    }
-    int saida = open("saida.txt",O_WRONLY | O_CREAT | O_TRUNC);
-    if(saida<0){
-        perror("error on open saida");
-    }
-    int err = open("error.txt",O_WRONLY | O_CREAT | O_TRUNC);
-    if(err<0){    
-        perror("error on open error");
-    }
-
-    int in = dup(0);
-    int out = dup(1);
-    int error = dup(2);
-    
-    dup2(password,0);
-    dup2(saida,1);
-    dup2(err,2);
-    close(password);
-    close(saida);
-    close(err);
-
-    int fd = fork();
-    if(fd==0){
-        int read_res;
-        char buf[30];
-        while((read_res = read(password,&buf,30))<=30){
-        write(saida,&buf,read_res);
+            free(comandos[count]);
+            count--;
         }
+        free(comandos);
+        wait(NULL);
     }
-      
-    
 
-    dup2(out,1);
-    write(1,"TERMINEI",8);
-    */
+        
+    
     return 0;
 }
