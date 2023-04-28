@@ -11,24 +11,26 @@
 #include <time.h>
 #include <signal.h>
 #include <stdbool.h>
-
 #define MAX_COMMAND 256
 
 int running = true;
 
 int main(int argc, char **argv) {
 
+    // criar o pipe para receber pedidos dos clientes
     if (mkfifo("canal", 0600) == -1 && errno != EEXIST) {
         perror("Erro ao criar o canal nomeado");
-        exit(1);
+        //exit(1);
     }
 
     int canal = open("canal", O_RDONLY | O_WRONLY, 0600);
+    
     if (canal == -1) {
         perror("Erro ao abrir o canal nomeado");
         exit(1);
     }
-
+    
+    //ir lendo os pedidos enviados por clientes
     char buffer[MAX_COMMAND] = "";
     
     while (running) {
@@ -56,17 +58,18 @@ int main(int argc, char **argv) {
         
         if (bytes_lidos > 0) {
             buffer[bytes_lidos] = '\0';
-
+            
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
-
+            
             printf("Comando recebido: %s\n", buffer);
-
+            
+            //parse do comando recebido do cliente
             int pid = fork();
             if (pid == 0) {
                 // filho
                 printf("Executando comando...\n");
-
+                
                 // divide o comando em tokens
                 char *token;
                 char **info = malloc(sizeof(char*) * (MAX_COMMAND/2 + 1));
@@ -78,33 +81,35 @@ int main(int argc, char **argv) {
                     token = strtok(NULL, " ");
                 }
                 info[count] = NULL;
-
+                
                 // executa o comando
                 execvp(info[0], info);
                 perror("Erro ao executar o comando");
-
+                
                 free(info);
-                exit(PID);
-            }
-            else if (pid > 0) {
-                // pai
-                int status;
-                wait(&status);
-
-                time_t tf = time(NULL);
-                struct tm *timestampfinal = localtime(&tf);
-
-                printf("Comando finalizado com status %d\n", status);
-
-                char message[MAX_COMMAND];
-                int tamanho_str = sprintf(message, "Ended PID %d %04d-%02d-%02d %02d:%02d:%02d\n", pid,
-                    timestampfinal->tm_year + 1900, timestampfinal->tm_mon + 1, timestampfinal->tm_mday,
-                    timestampfinal->tm_hour, timestampfinal->tm_min, timestampfinal->tm_sec);
-
-                write(1, message, tamanho_str);
+                //exit(PID);
             }
             else {
-                perror("Erro ao criar processo filho");
+                if (pid > 0) {
+                    // pai
+                    int status;
+                    wait(&status);
+                    
+                    time_t tf = time(NULL);
+                    struct tm *timestampfinal = localtime(&tf);
+                    
+                    printf("Comando finalizado com status %d\n", status);
+                    
+                    char message[MAX_COMMAND];
+                    int tamanho_str = sprintf(message, "Ended PID %d %04d-%02d-%02d %02d:%02d:%02d\n", pid,
+                                              timestampfinal->tm_year + 1900, timestampfinal->tm_mon + 1, timestampfinal->tm_mday,
+                                              timestampfinal->tm_hour, timestampfinal->tm_min, timestampfinal->tm_sec);
+                    
+                    write(1, message, tamanho_str);
+                }
+                else {
+                    perror("Erro ao criar processo filho");
+                }
             }
         }
     }
@@ -114,6 +119,8 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+
 /*
 void armazenar_info_processo(int pid, char ** comando, struct tm *timestamp){
     int log = open("log.txt",O_WRONLY | O_CREAT | O_TRUNC,0660);
