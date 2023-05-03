@@ -4,9 +4,8 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <windows.h>
-#include <io.h>
-//#include <unistd.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <signal.h>
@@ -17,7 +16,7 @@ int running = true;
 
 int main(int argc, char **argv) {
 
-    // criar o pipe para receber pedidos dos clientes
+    // criar o qpipe para receber pedidos dos clientes
     if (mkfifo("canal", 0600) == -1 && errno != EEXIST) {
         perror("Erro ao criar o canal nomeado");
         //exit(1);

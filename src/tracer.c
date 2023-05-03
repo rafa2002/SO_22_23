@@ -4,16 +4,16 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <windows.h>
-#include <io.h>
-// #include <unistd.h>
-// #include <wait.h>
+#include <string.h>
+#include <unistd.h>
+#include <wait.h>
 #include <limits.h>
 #include <time.h>
 #include "monitor.h"
 
-int main(int argc, char ** argv){
 /*
+int main(int argc, char ** argv){
+
 typedef struct pedido{
   char * pid;
   char * nomeProg;
@@ -55,7 +55,7 @@ void freePedido(pedidos p){
 
 int main(int argc, char ** argv){
     
-    printf("O que o utilizador mandou executar - [%s]\n",argv);
+    printf("O que o utilizador mandou executar - [%s]\n",*argv);
     
     printf("argv[0] = %s,\n,argv[1] = %s\nargv[2] = %s",argv[0],argv[1],argv[2]);
     
@@ -105,7 +105,7 @@ int main(int argc, char ** argv){
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
             // Faço uma copia da string que quero escrever
-            char copy = malloc(sizeof(char)*tamanho_str);
+            char* copy = malloc(sizeof(char)*tamanho_str);
             strcpy(copy, tamanho_str);
             
             // Mensagem que o cliente escreve para o utilizador
