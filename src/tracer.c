@@ -81,6 +81,8 @@ int main(int argc, char ** argv){
     int tamanho_str = 0;
     
     int pid;
+    int year, month, day, hour, minute, second;
+    int yearf, monthf, dayf, hourf, minutef, secondf;
     
     //se a operação a efetuar é o status
     if(strcmp(argv[1], "status")==0){
@@ -104,23 +106,31 @@ int main(int argc, char ** argv){
             //Extrai o timestamp do inicio antes da execução
             time_t t = time(NULL);
             struct tm *timestamp = localtime(&t);
+            
+            year = timestamp->tm_year;
+            month = timestamp->tm_mon;
+            day = timestamp->tm_mday;
+            hour = timestamp->tm_hour;
+            minute = timestamp->tm_min;
+            second = timestamp->tm_sec;
             // Faço uma copia da string que quero escrever
-            char* copy = malloc(sizeof(char)*tamanho_str);
-            strcpy(copy, tamanho_str);
+            //char* copy = malloc(sizeof(char)*tamanho_str);
+            //strcpy(copy, tamanho_str);
             
             // Mensagem que o cliente escreve para o utilizador
             // Mensagem format: Running PID valor_pid valor_hora
-            tamanho_str = sprintf(message,"Running PID %d\n", pid);
-            write(1,canal,tamanho_str);
+            tamanho_str = sprintf(message,"Running %d\n", pid);
+            write(1,message,tamanho_str);
             
             // Mensagem que o cliente escreve para o servidor
             // tamanho_str = sprintf(message, ... ,pid,nome_do_programa,timestamp(ms));
-            tamanho_str = sprintf(message,"%d %Y-%m-%d %H:%M:%S",pid,timestamp);
-            write(canal,copy,tamanho_str);
+
+            tamanho_str = sprintf(message,"Running %d %y-%m-%d %H:%M:%S",pid,year,month,day,hour,minute,second);
+            write(canal,message,tamanho_str);
             
             //Este printf é para imprimir no stdout o comando a executar informando assim o user
             printf("PID[%d] para executar: ",pid);
-            for(int c = 1; c<strlen(comandos);c++){
+            for(int c = 1; c<strlen( comandos);c++){
                 printf("%s ",comandos[c]);
                 printf("\n");
             }
@@ -135,10 +145,17 @@ int main(int argc, char ** argv){
             // Extrai o timestamp do fim após a execução
             time_t tf = time(NULL);
             struct tm *timestampfinal = localtime(&tf);
-            
+            yearf = timestampfinal->tm_year;
+            monthf = timestampfinal->tm_mon;
+            dayf = timestampfinal->tm_mday;
+            hourf = timestampfinal->tm_hour;
+            minutef = timestampfinal->tm_min;
+            secondf = timestampfinal->tm_sec;
             // Mensagem que o cliente escreve para o servidor a avisar que concluiu
             // tamanho_str = sprintf(message, ... ,pid,nome_do_programa,timestamp(ms));
-            tamanho_str = sprintf(message,"%d %Y-%m-%d %H:%M:%S",pid,timestampfinal);
+            //tamanho_str = sprintf(message,"%d %Y-%m-%d %H:%M:%S",pid,yearf,monthf,dayf,hourf,minutef,secondf);
+            tamanho_str = sprintf(message,"%d %y-%m-%d %H:%M:%S",pid,yearf,monthf,dayf,hourf,minutef,secondf);
+
             write(canal,message,tamanho_str);
             while(count>=0){
                 free(comandos[count]);

@@ -12,23 +12,60 @@
 #include <stdbool.h>
 #define MAX_COMMAND 256
 
-int running = true;
+bool running = true;
+bool iniciar = true;
+
+struct Pedidos {
+    char *pid;
+    char *comando;
+    char *timeStamp;
+    struct Pedidos *prox_pedido;
+};
+
+void adicionar_pedido(struct Pedidos **lista, char *pid, char *comando, char *timeStamp) {
+    struct Pedidos *novo_pedido = (struct Pedidos*)malloc(sizeof(struct Pedidos));
+    novo_pedido->pid = pid;
+    novo_pedido->comando = comando;
+    novo_pedido->timeStamp = timeStamp;
+    novo_pedido->prox_pedido = *lista;
+    *lista = novo_pedido;
+}
+
+void remover_pedido(struct Pedidos **lista, char *pid) {
+    struct Pedidos *pedido_atual = *lista;
+    struct Pedidos *pedido_anterior = NULL;
+
+    while (pedido_atual != NULL) {
+        if (strcmp(pedido_atual->pid, pid) == 0) {
+            if (pedido_anterior == NULL) {
+                // o pedido a ser removido é o primeiro da lista
+                *lista = pedido_atual->prox_pedido;
+            } else {
+                // o pedido a ser removido está no meio da lista
+                pedido_anterior->prox_pedido = pedido_atual->prox_pedido;
+            }
+            free(pedido_atual);
+            return;
+        }
+        pedido_anterior = pedido_atual;
+        pedido_atual = pedido_atual->prox_pedido;
+    }
+}
 
 int main(int argc, char **argv) {
 
     // criar o qpipe para receber pedidos dos clientes
-    if (mkfifo("canal", 0600) == -1 && errno != EEXIST) {
+    if (mkfifo("canal",0666) == 1 && errno != EEXIST) {
         perror("Erro ao criar o canal nomeado");
         //exit(1);
     }
 
-    int canal = open("canal", O_RDONLY | O_WRONLY, 0600);
+    int canal = open("canal", O_RDONLY, 0600);
     
-    if (canal == -1) {
+    if (canal == 1) {
         perror("Erro ao abrir o canal nomeado");
         exit(1);
-    }
-    
+    } 
     //ir lendo os pedidos enviados por clientes
     char buffer[MAX_COMMAND] = "";
     
@@ -37,7 +74,8 @@ int main(int argc, char **argv) {
         char byte_lido;
         while((bytes_lidos += read(canal,&byte_lido, 1))){
             // Se o byte lido for o caractere nulo, processa a mensagem
-            if (byte_lido == '\0') {
+            if (byte_lido == '\0' && !iniciar) {
+                iniciar = false;
                 printf("Mensagem recebida: %s\n", buffer);
                 strncat(buffer, &byte_lido, 1);
                 break;
@@ -107,6 +145,7 @@ int main(int argc, char **argv) {
                     write(1, message, tamanho_str);
                 }
                 else {
+
                     perror("Erro ao criar processo filho");
                 }
             }
