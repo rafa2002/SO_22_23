@@ -14,7 +14,9 @@
 
 int main(int argc, char ** argv){
     
-    printf("O que o utilizador mandou executar - [%s]\n",*argv);
+    printf("O que o utilizador mandou executar - [");
+    for(int a =0 ; a<argc;a++) printf(" %s",argv[a]);
+    printf("]\n");
     
     char *arg = argv[3];
     int count = 0;
@@ -33,21 +35,23 @@ int main(int argc, char ** argv){
         comandos[count] = malloc(sizeof(NULL));
         comandos[count] = NULL;
         count++;
+        
     }
-    int canal = open("canal", O_WRONLY, 0600);
+    int canal = open("canal", O_WRONLY, 0666);
     char * message = malloc(sizeof(int) + sizeof(char)*50 + sizeof(time_t));
     int tamanho_str = 0, pid, mili_seconds_inicial = 0, mili_seconds_final = 0;
     
-    if(argc>=1 && strcmp(argv[1], "status")==0){
-        if((pid=fork())==0){   
-            //abrir o pipe para comunicar com o servidor e pedir os programas a serem executados
-            //if ((canal = open(buffer,O_WRONLY))==-1) perror ("open error Cliente->Servidor"); 
-            //pede_status();
+    
+    if(argc>1 && strcmp(argv[1], "status")==0){
+            if((pid=fork())==0){   
+                //abrir o pipe para comunicar com o servidor e pedir os programas a serem executados
+                //if ((canal = open(buffer,O_WRONLY))==-1) perror ("open error Cliente->Servidor"); 
+                //pede_status();
+                close(canal);
+                _exit(0);
+            }
             close(canal);
-            _exit(0);
         }
-        close(canal);
-    }
     else{
         //caso não haja espaço adiciona se à lista de pedidos
         // se há recursos para realizar o comando
@@ -59,24 +63,20 @@ int main(int argc, char ** argv){
             gettimeofday(&timestamp_inicial, NULL);
             mili_seconds_inicial = timestamp_inicial.tv_usec/1000;
             
-            // Mensagem que o cliente escreve para o utilizador
             // Mensagem format: Running PID valor_pid valor_timestamp
+            // Mensagem que o cliente escreve para o utilizador
             tamanho_str = sprintf(message,"Running %d %d\n", pid, mili_seconds_inicial);
             write(1,message,tamanho_str);
-            
             // Mensagem que o cliente escreve para o servidor
-            // tamanho_str = sprintf(message, ... ,pid,nome_do_programa,timestamp(ms));
-            tamanho_str = sprintf(message,"Running %d %d",pid,mili_seconds_inicial);
             write(canal,message,tamanho_str);
+            int d = dup(canal);
+            printf("valor do canal --- %d\n",d);
+            printf("PID[%d] para executar: ",pid);
             execvp(comandos[0],comandos);
             _exit(0);
 
             //Este printf é para imprimir no stdout o comando a executar informando assim o user
-            printf("PID[%d] para executar: ",pid);
-            for(int c = 1; c<strlen(*comandos);c++){
-                printf("%s ",comandos[c]);
-                printf("\n");
-            }        
+                   
         }
         else{
             //Este é o pai
@@ -90,7 +90,6 @@ int main(int argc, char ** argv){
             tamanho_str = sprintf(message,"End %d %d",pid,mili_seconds_final);
 
             write(canal,message,tamanho_str);
-            
             while(count>0){
                 free(comandos[count]);
                 count--;

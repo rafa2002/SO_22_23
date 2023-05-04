@@ -52,24 +52,28 @@ void remover_pedido(struct Pedidos **lista, char *pid) {
     }
 }
 
-int main(int argc, char **argv) {
+int main() {
 
+    int m = mkfifo("canal",0666);
+    printf("valor do makefifo %d\n",m);
+    printf("valor do errno %d\n",errno);
     // criar o qpipe para receber pedidos dos clientes
-    if (mkfifo("canal",0666) == 1 && errno != EEXIST) {
+    if(m == -1 && errno != EEXIST) {
         perror("Erro ao criar o canal nomeado");
         //exit(1);
     }
 
-    int canal = open("canal", O_RDONLY, 0600);
-    
-    if (canal == 1) {
+    int canal = open("canal", O_RDONLY);
+    printf("valor do canal [%d]\n",canal);
+    if(canal == 1) {
         perror("Erro ao abrir o canal nomeado");
         exit(1);
     } 
     //ir lendo os pedidos enviados por clientes
     char buffer[MAX_COMMAND] = "";
     
-    while (running) {
+    while(running) {
+        /*
         int bytes_lidos = 0;
         char byte_lido;
         while((bytes_lidos += read(canal,&byte_lido, 1))){
@@ -150,7 +154,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
-    }
+    */}
 
     close(canal);
     unlink("canal");
