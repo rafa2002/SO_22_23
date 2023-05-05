@@ -10,6 +10,7 @@
 #include <time.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stdio.h>
 #define MAX_COMMAND 256
 
 bool running = true;
@@ -59,48 +60,48 @@ int main(int argc, char ** argv) {
     printf("valor do errno %d\n",errno);
     // criar o qpipe para receber pedidos dos clientes
     if (m == -1) {
-    if (errno == EEXIST) {
-        unlink("canal");
-        m = mkfifo("canal", 0666);
+        if (errno == EEXIST) {
+            unlink("canal");
+            m = mkfifo("canal", 0666);
+        }
     }
-    if (m == -1) {
-        perror("Erro ao criar o canal nomeado");
-        printf("valor do errno %d\n",errno);
-        exit(1);
-    }
-}
 
     int canal = open("canal", O_RDONLY);
     printf("valor do canal [%d]\n",canal);
-    if(canal == 1) {
+    
+    if(canal == -1) {
         perror("Erro ao abrir o canal nomeado");
         exit(1);
-    } 
+    }
+    printf("Estamos aqui fora!!!");
     //ir lendo os pedidos enviados por clientes
     char buffer[MAX_COMMAND] = "";
     
     while(running) {
-        /*
+        printf("Estamos dentro!!");
         int bytes_lidos = 0;
-        char byte_lido;
+        char *byte_lido = malloc(sizeof(char));
         while((bytes_lidos += read(canal,&byte_lido, 1))){
             // Se o byte lido for o caractere nulo, processa a mensagem
-            if (byte_lido == '\0' && !iniciar) {
+            if (!strcmp(byte_lido,"\0") && !iniciar) {
                 iniciar = false;
                 printf("Mensagem recebida: %s\n", buffer);
                 strncat(buffer, &byte_lido, 1);
+                close(canal);
                 break;
             } else {
                 // Se o byte lido não for o caractere nulo, adiciona ao buffer
                 strncat(buffer, &byte_lido, 1);
             }
         }
+        
         if (bytes_lidos == -1) {
             perror("Erro ao ler do canal");
             exit(EXIT_FAILURE);
         } else if (bytes_lidos == 0) {
             //Aqui vamos ter de fazer alguma coisa
-            write(canal,"NO MORE REQUESTS\n",sizeof("NO MORE REQUESTS\n"));
+            iniciar = false;
+            close(canal);
             break;
         }
         
@@ -130,10 +131,6 @@ int main(int argc, char ** argv) {
                 }
                 info[count] = NULL;
                 
-                // executa o comando
-                execvp(info[0], info);
-                perror("Erro ao executar o comando");
-                
                 free(info);
                 //exit(PID);
             }
@@ -161,27 +158,9 @@ int main(int argc, char ** argv) {
                 }
             }
         }
-    */}
-
+    }
+    printf("final do codigo\n");
     close(canal);
     unlink("canal");
-
     return 0;
 }
-
-
-/*
-void armazenar_info_processo(int pid, char ** comando, struct tm *timestamp){
-    int log = open("log.txt",O_WRONLY | O_CREAT | O_TRUNC,0660);
-    char *buf = malloc(36 * sizeof(char));
-    char tempo[20];
-    strftime(tempo,strlen(tempo),"%Y-%m-%d %H:%M:%S",timestamp);
-    sprintf(buf,"Data formatada: %s\n",tempo);
-    write(log,&buf,strlen(buf));
-}
-
-
-int main(){
-    int comunicacao_cliente_servidor = mkfifo("comunicacao.txt");
-
-}*/
