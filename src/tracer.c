@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <unistd.h>
-#include <wait.h>
+//#include <wait.h>
 #include <limits.h>
 #include <time.h>
 #include "monitor.h"
@@ -41,30 +41,40 @@ int main(int argc, char ** argv){
     char * message = malloc(sizeof(int) + sizeof(char)*300 + sizeof(time_t));
     int tamanho_str = 0, pid, mili_seconds_inicial = 0, mili_seconds_final = 0;
     
-    
     if(argc>1 && strcmp(argv[1], "status")==0){
             if((pid=fork())==0){  
                 pid = getpid();
             
                 // Mensagem format: Running PID valor_pid valor_timestamp
                 // Mensagem que o cliente escreve para o utilizador
-                tamanho_str = sprintf(message,"STATUS %s %d\n",argv, pid);
+                tamanho_str = sprintf(message,"STATUS %d\n",pid);
                 write(1,message,tamanho_str);
+                
                 // Mensagem que o cliente escreve para o servidor
                 write(canal,message,tamanho_str);
                 int d = dup(canal);
                 printf("valor do canal --- %d\n",d);
                 printf("PID[%d] para executar: ",pid);
+                
+                char pid_strg[15];
+                // ler a resposta
+                sprintf(pid_strg,"%d",pid);
+                
+                int canal_status = open(pid_strg,O_RDONLY);
+                char buf[2000];
+                int bytes_lidos = 0;
+                while(bytes_lidos = read(canal_status,&buf,2000*sizeof(char)))
+                {
+                    write(1,buf,sizeof(bytes_lidos));
+                }
                 close(canal);
                 _exit(0);
             }else{
-                close(canal);
                 wait(NULL);
+                close(canal);
             }
         }
     else{
-        //caso não haja espaço adiciona se à lista de pedidos
-        // se há recursos para realizar o comando
         if((pid=fork())==0){
             pid = getpid();
             //Este é o filho
@@ -75,21 +85,28 @@ int main(int argc, char ** argv){
             
             // Mensagem format: Running PID valor_pid valor_timestamp
             // Mensagem que o cliente escreve para o utilizador
-            tamanho_str = sprintf(message,"Running %s %d %d\n",argv, pid, mili_seconds_inicial);;
+            /*char vazia[100];
+            for(int tam = 1; tam<argc;tam++){
+                strcat(vazia,argv[tam]);
+            }*/
+            tamanho_str = sprintf(message,"Running %d %d\n", pid, mili_seconds_inicial);
+            strcat(message,"'");
+            for(int tam = 1; tam<argc;tam++){
+                strcat(message,argv[tam]);
+            }
+            strcat(message,"'\n");
             write(1,message,tamanho_str);
             // Mensagem que o cliente escreve para o servidor
             write(canal,message,tamanho_str);
+            //free(vazia);
             int d = dup(canal);
             printf("valor do canal --- %d\n",d);
             printf("PID[%d] para executar: ",pid);
             execvp(comandos[0],comandos);
-            _exit(0);
-
-            //Este printf é para imprimir no stdout o comando a executar informando assim o user
-                   
         }
         else{
             //Este é o pai
+            wait(NULL);
             // Extrai o timestamp do fim após a execução
             struct timeval timestamp_final;
             gettimeofday(&timestamp_final, NULL);
@@ -97,14 +114,12 @@ int main(int argc, char ** argv){
 
             // Mensagem que o cliente escreve para o servidor a avisar que concluiu
             tamanho_str = sprintf(message,"Running %s %d %d\n",argv, pid, mili_seconds_final);
-
             write(canal,message,tamanho_str);
             while(count>0){
                 free(comandos[count]);
                 count--;
             }
             free(comandos);
-            wait(NULL);
         }
     }
     free(message);
