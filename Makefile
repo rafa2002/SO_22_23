@@ -20,4 +20,5 @@ bin/tracer: obj/tracer.o
 	gcc -Wall -g -c src/tracer.c -o obj/tracer.o
 
 clean:
-	rm -f obj/* tmp/* bin/{tracer,monitor}
+	rm -f pipes/* obj/* tmp/* bin/{tracer,monitor}
+	
