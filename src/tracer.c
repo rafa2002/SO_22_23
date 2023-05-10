@@ -22,12 +22,13 @@ int main(int argc, char ** argv){
         printf(" %s",argv[count]);
     }
     printf("]\n");
-*/
+*/	
+    int heranca[2];
+    if(pipe(heranca)==-1) perror("nao abriu o pipe heranca");
     char **comandos = malloc(sizeof(char*)*50);
     char * token;
     char *str = strdup(argv[3]);
     char *delim = "\"";
-    //int inicio = 0;
     token = strtok(str, delim);
 //    printf("token das aspas: %s\n", token);
     
@@ -113,7 +114,6 @@ int main(int argc, char ** argv){
     else{
         if((pid=fork())==0){
             pid = getpid();
-//            printf("- - - - - - - - - 22222 - - - - - - - - -  \n");
             //Este é o filho
             //Extrai o timestamp do inicio antes da execução
             
@@ -121,10 +121,12 @@ int main(int argc, char ** argv){
             gettimeofday(&timestamp_inicial, NULL);
             mili_seconds_inicial = timestamp_inicial.tv_usec/1000;
             inicio = mili_seconds_inicial;
-            printf("Inicio: %d\n", inicio);
+            close(heranca[0]);
+            char inicio_str[10];
+            sprintf(inicio_str,"%d",inicio);
+            write(heranca[1],inicio_str,sizeof(inicio_str));
             // Mensagem format: Running PID valor_pid valor_timestamp
             // Mensagem que o cliente escreve para o utilizador
-//            printf("- - - - - - - - - 33333 - - - - - - - - -  \n");
             strcpy(message,"Running ");
             strcpy(message_runningCliente,"Running PID ");
             for(int i = 0; i<count-1;i++){
@@ -134,10 +136,8 @@ int main(int argc, char ** argv){
                 strcat(message," ");
             
             }
-            printf("Inicio: %d\n", inicio);
             char resto[30];
             char message_runningCliente_resto[10];
-//            printf("- - - - - - - - - 44444 - - - - - - - - -  \n");
             sprintf(resto,"%d %d", pid, mili_seconds_inicial);
             
             sprintf(message_runningCliente_resto,"%d \n", pid);
@@ -146,8 +146,7 @@ int main(int argc, char ** argv){
             strcat(message,"\n");
             strcat(message_runningCliente,message_runningCliente_resto);
             
-            write(1,message_runningCliente,sizeof(message));
-            printf("Inicio: %d\n", inicio);
+            write(1,message_runningCliente,sizeof(message_runningCliente));
             // Mensagem que o cliente escreve para o servidor
             write(canal,message,sizeof(message));
             
@@ -160,7 +159,7 @@ int main(int argc, char ** argv){
             // Para cada comando fzr fork e cada filho trata do comando
             // enquanto que o filho que recebeu o pedido múltiplo fica à espera
             
-            printf("Inicio: ----%d\n", inicio);
+            printf("Inicio da execução: %d\n", inicio);
             execvp(comandos[0],comandos);
             
 //            printf("Comandos executados!\n");
@@ -173,21 +172,21 @@ int main(int argc, char ** argv){
             gettimeofday(&timestamp_final, NULL);
             mili_seconds_final = timestamp_final.tv_usec/1000;
             
-            printf("Chegamos aqui ao pai!\n");
-            
             // Mensagem que o cliente escreve para o servidor a avisar que concluiu
             int b = sizeof(message);
             
             memset(message, 0, b);
             strcpy(message,"Ended ");
             strcpy(message_endedCliente,"Ended in ");
+            close(heranca[1]);
+            char inicio_str[10];
+            read(heranca[0],&inicio_str,sizeof(inicio_str));
+            int inicio = atoi(inicio_str);
             
-            printf("No pai este é o valor de inicio: %d",inicio);
             int duracao = (mili_seconds_final - inicio);
             
-            printf("Inicio: %d\n", inicio);
-            printf("Fim: %d\n", mili_seconds_final);
-            printf("Duração: %d\n", duracao);
+            printf("Fim da execução: %d\n", mili_seconds_final);
+            printf("Duração da execução: %d\n", duracao);
             for(int i = 0; i<count-1;i++){
                 //printf("comandos[%d]: %s\n",i,comandos[i]);
                 strcat(message,comandos[i]);
@@ -221,4 +220,3 @@ int main(int argc, char ** argv){
     // caso n haja mais pedidos fecha cliente
     return 0;
 }
-
