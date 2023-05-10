@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <unistd.h>
-//#include <wait.h>
+#include <wait.h>
 #include <stdbool.h>
 #include <limits.h>
 #include <time.h>
