@@ -34,6 +34,7 @@ int contar_pedidos(struct Pedidos *lista) {
 }
 
 void imprimir_pedido(struct Pedidos *pedido) {
+    printf(" ---- ---- ---- Pedido ---- ---- --- \n\n");
     printf("PID: %s\n", pedido->pid);
     printf("Comando: ");
     for (int i = 0; pedido->comando[i] != NULL; i++) {
@@ -41,12 +42,16 @@ void imprimir_pedido(struct Pedidos *pedido) {
     }
     printf("\n");
     printf("Timestamp: %s\n", pedido->timeStamp);
+    
+    printf("\n ---- ---- ---- FIM ---- ---- --- \n\n");
 }
 
-void imprimir_lista(struct Pedidos **lista) {
-    for (struct Pedidos *pedido = *lista; pedido != NULL; pedido = pedido->prox_pedido) {
+void imprimir_lista(struct Pedidos *lista) {
+    printf(" ====== ====== ====== LISTA ====== ====== ====== \n\n");
+    for (struct Pedidos *pedido = lista; pedido != NULL; pedido = pedido->prox_pedido) {
         imprimir_pedido(pedido);
     }
+    printf(" ====== ====== ====== FIM ====== ====== ====== \n\n");
 }
 
 void adicionar_pedido(struct Pedidos **lista, char *v_pid, char **comando, char *timestamp, int q_comandos) {
@@ -59,24 +64,19 @@ void adicionar_pedido(struct Pedidos **lista, char *v_pid, char **comando, char 
     novo_pedido->prox_pedido = NULL;
     printf("hey\n");
     // Se a lista estiver vazia, o novo nó será o primeiro e o último
-    if (*lista == NULL) {
-        printf("csdcsc\n");
-        *lista = novo_pedido;
-//        imprimir_pedido(novo_pedido);
-//        imprimir_lista(lista);
-        printf("csdcsc\n");
+    if (lista == NULL) {
+        lista = &novo_pedido;
+        //imprimir_pedido(novo_pedido);
+        //imprimir_lista(*lista);
     }
     // Caso contrário, o novo nó será adicionado no início da lista
     else {
-        printf("hey else\n");
         novo_pedido->prox_pedido = *lista;
-        printf("oiiiis else\n");
-        *lista = novo_pedido;
-        printf("puts else\n");
-        imprimir_pedido(novo_pedido);
-//        imprimir_lista(lista);
-        printf("hjgdsagdashgdashj else\n");
+        lista = &novo_pedido;
+        //imprimir_pedido(novo_pedido);
+        //imprimir_lista(*lista);
     }
+    
     printf("bye\n");
 }
 
@@ -174,7 +174,9 @@ int main(int argc, char ** argv) {
                 
                 printf(" ----- Antes de invocar adicionar_pedido ----\n");
                 adicionar_pedido(pedidos,pid,comando,timestamp,n-3);
-                
+                printf(" ----- Antes de invocar adicionar_pedido ----\n");
+                imprimir_lista(*pedidos);
+                printf(" ----- Antes de invocar adicionar_pedido ----\n");
                 for(int i = 0; i<n-3;i++)
                 {
                     
@@ -248,7 +250,7 @@ int main(int argc, char ** argv) {
                     free(pedido_atual);
                     pedido_atual = pedido_atual->prox_pedido;
                     write(canal_status,mensagem_status,sizeof(mensagem_status));
-                    free(mensagem_status);
+                    //free(mensagem_status);
                     close(canal_status);
                 }
             }
@@ -257,10 +259,10 @@ int main(int argc, char ** argv) {
             perror("Erro na leitura do pedido");
             continue;
         }
-        if (bytes_lidos == 0 && pedidos==NULL) {
+        /*if (bytes_lidos == 0 && pedidos==NULL) {
             printf("OK entra no if bytes_lidos == 0 && pedidos==NULL------ \n");
             running = false;
-        }
+        }*/
     }
     printf("final do codigo\n");
     close(canal);
