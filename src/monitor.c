@@ -38,7 +38,7 @@ void imprimir_pedido(struct Pedidos *pedido) {
     printf("PID: %s\n", pedido->pid);
     printf("Comando: \n");
     int n_comandos = strlen(pedido->comando);
-    //printf("%lu\n",n_comandos);
+    printf("%d\n",n_comandos);
     for (int i = 0; i<n_comandos; i++) {
         printf("%s ", pedido->comando[i]);
     }
@@ -58,14 +58,21 @@ void imprimir_lista(struct Pedidos *lista) {
 
 void adicionar_pedido(struct Pedidos *lista, char *v_pid, char **comando, char *timestamp, int q_comandos) {
     // Cria um novo nó
-    printf("hello\n");
     struct Pedidos *novo_pedido = (struct Pedidos*) malloc(sizeof(struct Pedidos));
     novo_pedido->pid = v_pid;
-    printf("Adicionar comandos %lu\n",strlen(comando));
-    novo_pedido->comando = comando;
+    //printf("Adicionar comandos %lu\n",strlen(comando));
+    printf("Comando[0]: %s\n",comando[0]);
+    printf("Comando[1]: %s\n",comando[1]);
+    printf("Comando[2]: %s\n",comando[2]);
+    printf("Comando[3]: %s\n",comando[3]);
+    for(int i = 0;i<strlen(comando);i++) {
+        printf("Comando: %s\n",comando[1]);
+        novo_pedido->comando[i] = malloc(sizeof(comando[i]))
+        novo_pedido->comando[i] = comando[i];
+    }
     novo_pedido->timeStamp = timestamp;
     novo_pedido->prox_pedido = NULL;
-    printf("hey\n");
+    printf("hey-----\n");
     // Se a lista estiver vazia, o novo nó será o primeiro e o último
     if (lista == NULL) {
         lista = novo_pedido;
