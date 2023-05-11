@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <unistd.h>
-#include <wait.h>
+//#include <wait.h>
 #include <stdbool.h>
 #include <limits.h>
 #include <time.h>
@@ -150,7 +150,7 @@ int main(int argc, char ** argv){
             // Mensagem que o cliente escreve para o servidor
             write(canal,message,sizeof(message));
             
-            int d = dup(canal);
+            //int d = dup(canal);
 //            printf("valor do canal --- %d\n",d);
 //            printf("PID[%d] para executar: \n",pid);
             
@@ -181,6 +181,7 @@ int main(int argc, char ** argv){
             close(heranca[1]);
             char inicio_str[10];
             read(heranca[0],&inicio_str,sizeof(inicio_str));
+            close(heranca[0]);
             int inicio = atoi(inicio_str);
             
             int duracao = (mili_seconds_final - inicio);

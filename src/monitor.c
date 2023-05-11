@@ -36,8 +36,10 @@ int contar_pedidos(struct Pedidos *lista) {
 void imprimir_pedido(struct Pedidos *pedido) {
     printf(" ---- ---- ---- Pedido ---- ---- --- \n\n");
     printf("PID: %s\n", pedido->pid);
-    printf("Comando: ");
-    for (int i = 0; pedido->comando[i] != NULL; i++) {
+    printf("Comando: \n");
+    int n_comandos = strlen(pedido->comando);
+    //printf("%lu\n",n_comandos);
+    for (int i = 0; i<n_comandos; i++) {
         printf("%s ", pedido->comando[i]);
     }
     printf("\n");
@@ -54,34 +56,40 @@ void imprimir_lista(struct Pedidos *lista) {
     printf(" ====== ====== ====== FIM ====== ====== ====== \n\n");
 }
 
-void adicionar_pedido(struct Pedidos **lista, char *v_pid, char **comando, char *timestamp, int q_comandos) {
+void adicionar_pedido(struct Pedidos *lista, char *v_pid, char **comando, char *timestamp, int q_comandos) {
     // Cria um novo nó
     printf("hello\n");
     struct Pedidos *novo_pedido = (struct Pedidos*) malloc(sizeof(struct Pedidos));
     novo_pedido->pid = v_pid;
+    printf("Adicionar comandos %lu\n",strlen(comando));
     novo_pedido->comando = comando;
     novo_pedido->timeStamp = timestamp;
     novo_pedido->prox_pedido = NULL;
     printf("hey\n");
     // Se a lista estiver vazia, o novo nó será o primeiro e o último
     if (lista == NULL) {
-        lista = &novo_pedido;
+        lista = novo_pedido;
+        printf("ifffffff lista %lu\n",strlen(lista->comando));
+        printf("ifffffff novo_pedido %lu\n",strlen(novo_pedido->comando));
         //imprimir_pedido(novo_pedido);
         //imprimir_lista(*lista);
     }
     // Caso contrário, o novo nó será adicionado no início da lista
     else {
-        novo_pedido->prox_pedido = *lista;
-        lista = &novo_pedido;
+        novo_pedido->prox_pedido = lista;
+        lista = novo_pedido;
+        printf("else lista %lu\n",strlen(lista->comando));
+        printf("else novo_pedido %lu\n",strlen(novo_pedido->comando));
         //imprimir_pedido(novo_pedido);
         //imprimir_lista(*lista);
     }
+    imprimir_pedido(novo_pedido);
     
     printf("bye\n");
 }
 
-char* remover_pedido(struct Pedidos **lista, char *pid) {
-    struct Pedidos *pedido_atual = *lista;
+char* remover_pedido(struct Pedidos *lista, char *pid) {
+    struct Pedidos *pedido_atual = lista;
     struct Pedidos *pedido_anterior = NULL;
     char *time = NULL;
     while (pedido_atual != NULL) {
@@ -89,7 +97,7 @@ char* remover_pedido(struct Pedidos **lista, char *pid) {
             time = strdup(pedido_atual->timeStamp);
             if (pedido_anterior == NULL) {
                 // o pedido a ser removido é o primeiro da lista
-                *lista = pedido_atual->prox_pedido;
+                lista = pedido_atual->prox_pedido;
             } else {
                 // o pedido a ser removido está no meio da lista
                 pedido_anterior->prox_pedido = pedido_atual->prox_pedido;
@@ -106,7 +114,7 @@ char* remover_pedido(struct Pedidos **lista, char *pid) {
 int main(int argc, char ** argv) {
     
     // Criação da lista de pedidos
-    struct Pedidos **pedidos = NULL;
+    struct Pedidos *pedidos = NULL;
 
     int m = mkfifo("canal",0666);
     printf("valor do makefifo %d\n",m);
@@ -159,33 +167,29 @@ int main(int argc, char ** argv) {
             {
 
                 char *pid = pedido[n-2];
-                printf("1\n");
                 char *timestamp = pedido[n-1];
-                printf("2\n");
                 char ** comando = malloc((n-3)*sizeof(char *));
-                printf("n-2 : %d\n",n-2);
                 for(int i = 1; i<n-2;i++){
-                    printf("i : %d\n",i);
                     int bytes = sizeof(pedido[i]);
                     comando[i-1] = malloc(bytes);
                     strcpy(comando[i-1], pedido[i]);
                 }
-                printf("valor de n : %d -----\n",n);
+                //printf("valor de n : %d\n",n);
                 
                 printf(" ----- Antes de invocar adicionar_pedido ----\n");
                 adicionar_pedido(pedidos,pid,comando,timestamp,n-3);
                 printf(" ----- Antes de invocar adicionar_pedido ----\n");
-                imprimir_lista(*pedidos);
+                //imprimir_lista(*pedidos);
                 printf(" ----- Antes de invocar adicionar_pedido ----\n");
-                for(int i = 0; i<n-3;i++)
+                /*for(int i = 0; i<n-3;i++)
                 {
                     
                     printf("comando[%d]: %s\n",i,comando[i]);
                     free(comando[i]);
                 }
-                free(comando);
+                free(comando);*/
             }
-            
+            printf("PASSSAA AQUII\n");
             if(!strcmp(estado,"Ended")){
                 printf("OK ended------ \n");
                 // A mensagem_final é a linha que se escreve em cada pid.txt com o seguinte formato:
@@ -227,7 +231,7 @@ int main(int argc, char ** argv) {
             if(!strcmp(estado,"status")){
                 printf("OK status------ \n");
                 char *pid = pedido[1];
-                struct Pedidos *pedido_atual = *pedidos;
+                struct Pedidos *pedido_atual = pedidos;
                 int canal_status = open(pid,O_CREAT | O_TRUNC | O_WRONLY);
                 
                 while (pedido_atual != NULL) {
