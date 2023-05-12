@@ -108,18 +108,18 @@ int main(int argc, char ** argv) {
     // Criação da lista de pedidos
     struct Pedidos *pedidos = NULL;
 
-    int m = mkfifo("fifos/canal",0666);
+    int m = mkfifo("../fifos/canal",0666);
     //printf("valor do makefifo %d\n",m);
     //printf("valor do errno %d\n",errno);
     // criar o qpipe para receber pedidos dos clientes
     if (m == -1) {
         if (errno == EEXIST) {
-            unlink("fifos/canal");
-            m = mkfifo("fifos/canal", 0666);
+            unlink("../fifos/canal");
+            m = mkfifo("../fifos/canal", 0666);
         }
     }
 
-    int canal = open("fifos/canal", O_RDONLY | O_CREAT | O_TRUNC);
+    int canal = open("../fifos/canal", O_RDONLY | O_CREAT | O_TRUNC, 0666);
     //printf("valor do canal [%d]\n",canal);
     
     if(canal == -1) {
@@ -200,9 +200,10 @@ int main(int argc, char ** argv) {
                 sprintf(duracao_str,"%d",duracao);
                 strcat(mensagem_final,duracao_str);
                 strcat(mensagem_final,"\0");
-                int j = strlen(txt) + strlen(pid);
+                int j = strlen("../fifos/") + strlen(txt) + strlen(pid);
                 char f[j];
-                strcpy(f,pid);
+                strcpy(f,"../fifos/");
+                strcat(f,pid);
                 strcat(f,txt);
                 //printf("nome do ficheiro file_pid: %s\n",f);
                 // criar ficheiro com pid do processo como nome
@@ -216,7 +217,10 @@ int main(int argc, char ** argv) {
             }
             if(!strcmp(estado,"status")){
                 //printf("OK status------ \n");
-                char *pid = pedido[1];
+                char pid[strlen(pedido[1]) + strlen("../fifos/")];
+                strcpy(pid,"../fifos/");
+                strcat(pid,pedido[1]);
+                printf("pid: --- %s\n",pid);
                 struct Pedidos *pedido_atual = pedidos;
                 int canal_status = open(pid,O_CREAT | O_TRUNC | O_WRONLY,0666);
 
@@ -265,6 +269,6 @@ int main(int argc, char ** argv) {
         
     }
     close(canal);
-    unlink("fifos/canal");
+    unlink("../fifos/canal");
     return 0;
 }
