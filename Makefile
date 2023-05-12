@@ -22,3 +22,4 @@ bin/tracer: obj/tracer.o
 clean:
 	rm -f fifos/* obj/* tmp/* bin/{tracer,monitor}
 	
+	
