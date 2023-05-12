@@ -19,7 +19,7 @@ bool running = true;
 
 struct Pedidos {
     char *pid;
-    char **comando;
+    char *comando;
     char *timeStamp;
     struct Pedidos *prox_pedido;
 };
@@ -36,13 +36,7 @@ int contar_pedidos(struct Pedidos *lista) {
 void imprimir_pedido(struct Pedidos *pedido) {
     printf(" ---- ---- ---- Pedido ---- ---- --- \n\n");
     printf("PID: %s\n", pedido->pid);
-    printf("Comando: \n");
-    int n_comandos = strlen(pedido->comando);
-    printf("%d\n",n_comandos);
-    for (int i = 0; i<n_comandos; i++) {
-        printf("%s ", pedido->comando[i]);
-    }
-    printf("\n");
+    printf("Comando: %s\n",pedido->comando);
     printf("Timestamp: %s\n", pedido->timeStamp);
     
     printf("\n ---- ---- ---- FIM ---- ---- --- \n\n");
@@ -56,28 +50,17 @@ void imprimir_lista(struct Pedidos *lista) {
     printf(" ====== ====== ====== FIM ====== ====== ====== \n\n");
 }
 
-void adicionar_pedido(struct Pedidos *lista, char *v_pid, char **comando, char *timestamp, int q_comandos) {
+struct Pedidos * adicionar_pedido(struct Pedidos *lista, char *v_pid, char *comando, char *timestamp, int q_comandos) {
     // Cria um novo nó
     struct Pedidos *novo_pedido = (struct Pedidos*) malloc(sizeof(struct Pedidos));
     novo_pedido->pid = v_pid;
-    //printf("Adicionar comandos %lu\n",strlen(comando));
-    printf("Comando[0]: %s\n",comando[0]);
-    printf("Comando[1]: %s\n",comando[1]);
-    printf("Comando[2]: %s\n",comando[2]);
-    printf("Comando[3]: %s\n",comando[3]);
-    for(int i = 0;i<strlen(comando);i++) {
-        printf("Comando: %s\n",comando[1]);
-        novo_pedido->comando[i] = malloc(sizeof(comando[i]))
-        novo_pedido->comando[i] = comando[i];
-    }
+    novo_pedido->comando = comando;
     novo_pedido->timeStamp = timestamp;
     novo_pedido->prox_pedido = NULL;
-    printf("hey-----\n");
+    //printf("hey-----\n");
     // Se a lista estiver vazia, o novo nó será o primeiro e o último
     if (lista == NULL) {
         lista = novo_pedido;
-        printf("ifffffff lista %lu\n",strlen(lista->comando));
-        printf("ifffffff novo_pedido %lu\n",strlen(novo_pedido->comando));
         //imprimir_pedido(novo_pedido);
         //imprimir_lista(*lista);
     }
@@ -85,22 +68,22 @@ void adicionar_pedido(struct Pedidos *lista, char *v_pid, char **comando, char *
     else {
         novo_pedido->prox_pedido = lista;
         lista = novo_pedido;
-        printf("else lista %lu\n",strlen(lista->comando));
-        printf("else novo_pedido %lu\n",strlen(novo_pedido->comando));
-        //imprimir_pedido(novo_pedido);
-        //imprimir_lista(*lista);
+        //printf("else lista %lu\n",strlen(lista->comando));
+        //printf("else novo_pedido %lu\n",strlen(novo_pedido->comando));
     }
-    imprimir_pedido(novo_pedido);
-    
-    printf("bye\n");
+    //imprimir_pedido(novo_pedido);
+    //imprimir_lista(lista);
+    return lista;
+    //printf("bye\n");
 }
 
 char* remover_pedido(struct Pedidos *lista, char *pid) {
     struct Pedidos *pedido_atual = lista;
     struct Pedidos *pedido_anterior = NULL;
-    char *time = NULL;
+    char *time = malloc(sizeof(char)*10);
     while (pedido_atual != NULL) {
         if (strcmp(pedido_atual->pid, pid) == 0) {
+            //printf("tempo no pedido: %s\n", pedido_atual->timeStamp);
             time = strdup(pedido_atual->timeStamp);
             if (pedido_anterior == NULL) {
                 // o pedido a ser removido é o primeiro da lista
@@ -110,11 +93,13 @@ char* remover_pedido(struct Pedidos *lista, char *pid) {
                 pedido_anterior->prox_pedido = pedido_atual->prox_pedido;
             }
             free(pedido_atual);
+            //printf("tempo : %s\n",time);
             return time;
         }
         pedido_anterior = pedido_atual;
         pedido_atual = pedido_atual->prox_pedido;
     }
+    //printf("tempo null: %s\n",time);
     return time;
 }
 
@@ -123,19 +108,19 @@ int main(int argc, char ** argv) {
     // Criação da lista de pedidos
     struct Pedidos *pedidos = NULL;
 
-    int m = mkfifo("canal",0666);
-    printf("valor do makefifo %d\n",m);
-    printf("valor do errno %d\n",errno);
+    int m = mkfifo("fifos/canal",0666);
+    //printf("valor do makefifo %d\n",m);
+    //printf("valor do errno %d\n",errno);
     // criar o qpipe para receber pedidos dos clientes
     if (m == -1) {
         if (errno == EEXIST) {
-            unlink("canal");
-            m = mkfifo("canal", 0666);
+            unlink("fifos/canal");
+            m = mkfifo("fifos/canal", 0666);
         }
     }
 
-    int canal = open("canal", O_RDONLY | O_CREAT | O_TRUNC);
-    printf("valor do canal [%d]\n",canal);
+    int canal = open("fifos/canal", O_RDONLY | O_CREAT | O_TRUNC);
+    //printf("valor do canal [%d]\n",canal);
     
     if(canal == -1) {
         perror("Erro ao abrir o canal nomeado");
@@ -151,14 +136,14 @@ int main(int argc, char ** argv) {
     {
         while((bytes_lidos = read(canal,&buffer,MAX_COMMAND))>0) {
             char token[100];
-            //procurar até ao /n e guardar em string
+            // Procurar até ao /n e guardar em string
             strcpy(token, strtok(buffer, "\n"));
             // Separação dos argumentos do pedido em string
             char ** pedido = malloc(40*sizeof(char *));
             int i = 0;
             char *token_aux = strtok(token," ");
             while (token_aux != NULL) {
-                    printf("Este é o token_aux: %s\n",token_aux);
+                    //printf("Este é o token_aux: %s\n",token_aux);
                     pedido[i] = malloc(sizeof(token_aux));
                     strcpy(pedido[i], token_aux);
                     token_aux = strtok(NULL, " ");
@@ -170,113 +155,116 @@ int main(int argc, char ** argv) {
                 n++;
             }
             char *estado = pedido[0];
+            //printf("%s\n", estado);
             if(!strcmp(estado,"Running"))
             {
 
                 char *pid = pedido[n-2];
                 char *timestamp = pedido[n-1];
-                char ** comando = malloc((n-3)*sizeof(char *));
-                for(int i = 1; i<n-2;i++){
-                    int bytes = sizeof(pedido[i]);
-                    comando[i-1] = malloc(bytes);
-                    strcpy(comando[i-1], pedido[i]);
+                int bytes_comandos = 0;
+                for(int i = 1; i<n-2;i++) bytes_comandos+=sizeof(pedido[i]);
+                char * str_comandos = malloc(bytes_comandos*sizeof(char));
+                strcpy(str_comandos,pedido[1]);
+                strcat(str_comandos," ");
+                for(int i = 2; i<n-2;i++){
+                    strcat(str_comandos,pedido[i]);
+                    strcat(str_comandos," ");
                 }
-                //printf("valor de n : %d\n",n);
-                
-                printf(" ----- Antes de invocar adicionar_pedido ----\n");
-                adicionar_pedido(pedidos,pid,comando,timestamp,n-3);
-                printf(" ----- Antes de invocar adicionar_pedido ----\n");
+                //printf(" ----- Antes de invocar adicionar_pedido ----\n");
+                pedidos = adicionar_pedido(pedidos,pid,str_comandos,timestamp,n-3);
                 //imprimir_lista(*pedidos);
-                printf(" ----- Antes de invocar adicionar_pedido ----\n");
-                /*for(int i = 0; i<n-3;i++)
-                {
-                    
-                    printf("comando[%d]: %s\n",i,comando[i]);
-                    free(comando[i]);
-                }
-                free(comando);*/
+                free(str_comandos);
             }
-            printf("PASSSAA AQUII\n");
             if(!strcmp(estado,"Ended")){
-                printf("OK ended------ \n");
+                //printf("OK ended------ \n");
                 // A mensagem_final é a linha que se escreve em cada pid.txt com o seguinte formato:
                 // PID COMANDOS TIME(duracao)
-                char mensagem_final[n];
+                int bytes_comandos = 0;
+                for(int i = 1; i<n-2;i++) bytes_comandos+=sizeof(pedido[i]);
+                char mensagem_final[n+bytes_comandos];
                 char *txt = ".txt";
                 char *pid = pedido[n-2];
                 strcpy(mensagem_final,pid);
+                strcat(mensagem_final," ");
                 char *timestamp = pedido[n-1];
-                char ** comando = malloc((n-3)*sizeof(char *));
                 for(int i = 1; i<n-2;i++){
                     strcat(mensagem_final,pedido[i]);
-                    int bytes = sizeof(pedido[i]);
-                    comando[i-1] = malloc(bytes);
-                    strcpy(comando[i-1], pedido[i]);
+                    strcat(mensagem_final," ");
                 }
-                
-                // Guardar pedido na lista de pedidos
                 char *timestampinicial = remover_pedido(pedidos,pid);
+                
+                //printf("timestamp final: %s\n",timestamp);
+                //printf("timestamp inicial: %s\n",timestampinicial);
                 int duracao = atoi(timestamp) - atoi(timestampinicial);
                 char *duracao_str = malloc(sizeof(char)*10);
                 sprintf(duracao_str,"%d",duracao);
                 strcat(mensagem_final,duracao_str);
-                
+                strcat(mensagem_final,"\0");
                 int j = strlen(txt) + strlen(pid);
                 char f[j];
                 strcpy(f,pid);
                 strcat(f,txt);
-                printf("nome do ficheiro file_pid: %s",f);
-                
+                //printf("nome do ficheiro file_pid: %s\n",f);
                 // criar ficheiro com pid do processo como nome
-                int file_pid = open(f,O_RDWR | O_CREAT | O_TRUNC);
+                int file_pid = open(f,O_RDWR | O_CREAT | O_TRUNC, 0666);
                 write(file_pid,mensagem_final,sizeof(mensagem_final));
-                
-                printf("valor do file_pid: %d\n",file_pid);
+                //printf("%s-%lu\n", mensagem_final, strlen(mensagem_final));
+                write(file_pid,"\0",1);
+                //printf("valor do file_pid: %d\n",file_pid);
                 close(file_pid);
                 
             }
             if(!strcmp(estado,"status")){
-                printf("OK status------ \n");
+                //printf("OK status------ \n");
                 char *pid = pedido[1];
                 struct Pedidos *pedido_atual = pedidos;
-                int canal_status = open(pid,O_CREAT | O_TRUNC | O_WRONLY);
-                
+                int canal_status = open(pid,O_CREAT | O_TRUNC | O_WRONLY,0666);
+
+                //printf("PID para status: %s\n", pid);
+                //printf("vamos enviar os pedidos todos ~ antes do while\n");
+
                 while (pedido_atual != NULL) {
                     
                     struct timeval timestamp_at_moment;
                     gettimeofday(&timestamp_at_moment, NULL);
                     int mili_seconds_atmoment = timestamp_at_moment.tv_usec/1000;
-                    
+                    //printf("timestamp_at_moment: %d\n",mili_seconds_atmoment);
+                    //printf("pedido_atual->timeStamp: %s",pedido_atual->timeStamp);
                     int at_moment = mili_seconds_atmoment - atoi(pedido_atual->timeStamp);
                     
                     char mensagem_status[200];
-                    strcpy(mensagem_status, "status");
-                    for(int i = 0; i<strlen(*pedido_atual->comando);i++)
-                        strcat(mensagem_status,pedido_atual->comando[i]);
-                    
-                    char resto[20];
-                    sprintf(resto,"%s %d\n",pedido_atual->pid, at_moment);
+                    strcpy(mensagem_status, pedido_atual->pid);
+                    char resto[30];
+                    sprintf(resto," %s %d ms\n",pedido_atual->comando, at_moment);
                     strcat(mensagem_status,resto);
 
-                    free(pedido_atual);
+                    //free(pedido_atual);
                     pedido_atual = pedido_atual->prox_pedido;
+                    //printf("status mensagem ------> %s\n", mensagem_status);
                     write(canal_status,mensagem_status,sizeof(mensagem_status));
                     //free(mensagem_status);
-                    close(canal_status);
+                    
                 }
+                close(canal_status);
+                //printf("enviado!!!!!!!!!!!!!");
             }
+            if (!strcmp(estado,"close")) {
+            running = false;
+            char mensagem_close[10];
+            strcpy(mensagem_close, "Closing\n");
+            write(1,mensagem_close,sizeof(mensagem_close));
+            sleep(3);
+            break;
+            }   
         }
+        
         if (bytes_lidos < 0) {
             perror("Erro na leitura do pedido");
             continue;
         }
-        /*if (bytes_lidos == 0 && pedidos==NULL) {
-            printf("OK entra no if bytes_lidos == 0 && pedidos==NULL------ \n");
-            running = false;
-        }*/
+        
     }
-    printf("final do codigo\n");
     close(canal);
-    unlink("canal");
+    unlink("fifos/canal");
     return 0;
 }
