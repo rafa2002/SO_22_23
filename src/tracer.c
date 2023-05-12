@@ -16,13 +16,7 @@
 int inicio = 0;
 
 int main(int argc, char ** argv){
-    
-/*    printf("O que o utilizador mandou executar - [");
-    for(int count =0 ; count<argc;count++){
-        printf(" %s",argv[count]);
-    }
-    printf("]\n");
-*/	
+
     int heranca[2];
     if(pipe(heranca)==-1) perror("nao abriu o pipe heranca");
     char **comandos = malloc(sizeof(char*)*50);
@@ -30,15 +24,15 @@ int main(int argc, char ** argv){
     char *str = strdup(argv[3]);
     char *delim = "\"";
     token = strtok(str, delim);
-//    printf("token das aspas: %s\n", token);
     
     int count = 0;
     bool flag_sleep = false;
     
     char *new_token = strtok(str, " ");
+
     while (new_token != NULL) {
-//        printf("token: %s\n", new_token);
-        // nao temo estado de sleep
+
+        // nao temos estado de sleep
         if(strcmp(new_token,"sleep")!=0 && !flag_sleep){
             comandos[count] = malloc(sizeof(new_token));
             strcpy(comandos[count], new_token);
@@ -57,50 +51,91 @@ int main(int argc, char ** argv){
         }
         
         new_token = strtok(NULL, " ");
-        
     }
+
     comandos[count] = NULL;
     count++;
-/*
-    for(int i = 0; i<count;i++){
-        printf("valoreeeeee  i:: %d\n",i);
-        printf("comandos[%d]: %s\n",i,comandos[i]);
-        
-    }
-*/
-    int canal = open("canal", O_WRONLY,0666);
+
+    int canal = open("../fifos/canal", O_WRONLY,0666);
     
-//    printf("- - - - - - - - - 999999 - - - - - - - - -  \n");
     char message[200];
     char message_runningCliente[20];
     char message_endedCliente[20];
-//    printf("- - - - - - - - - 555555 - - - - - - - - -  \n");
     int tamanho_str = 0, pid, mili_seconds_inicial = 0, mili_seconds_final = 0;
-//    printf("- - - - - - - - - 00000 - - - - - - - - -  \n");
     
     if(argc>1 && strcmp(argv[1], "status")==0){
             if((pid=fork())==0){  
                 pid = getpid();
             
-                // Mensagem format: Running PID valor_pid valor_timestamp
                 // Mensagem que o cliente escreve para o utilizador
+                // Mensagem format: status pid_valor
                 tamanho_str = sprintf(message,"status %d\n",pid);
+                write(1,message,tamanho_str);
+                //printf("escrevemos aqui");
+                // Mensagem que o cliente escreve para o servidor
+                // Mensagem format: status pid_valor
+                write(canal,message,tamanho_str);
+                int d = dup(canal);
+                //printf("valor do canal: %d\n",canal);
+                //printf("estamos a escrever a mensagem\n");
+                char pid_strg[200];
+                sprintf(pid_strg,"../fifos/%d",pid);
+                //printf("estamos a abrir o canal\n");
+
+                int m = mkfifo(pid_strg,0666);
+                int canal_status = open(pid_strg,O_RDONLY,0666);
+                char buf[200];
+                int bytes_lidos = 0;
+                //printf("pid string : %s\n", pid_strg);
+                //printf("valor canal status: %d\n", canal_status);
+                //printf("estamos a imprimir os pedidos todos\n");
+                while((bytes_lidos = read(canal_status,&buf,200*sizeof(char)))>0)
+                {
+                    //printf("%s\n", buf);
+                    for (int i = 0; i < bytes_lidos; i++) {
+                        write(1, &buf[i], 1);
+                    if (buf[i] == '\n') {
+                        break;
+                        }
+                    }
+                }
+                //printf("bytes lidos = %d\n");
+                //printf("%s\n", buf);
+                //printf("Devias ter recebido o pedido!!!!!!!!!!!!!!\n");
+                close(canal);
+                close(canal_status);
+                _exit(0);
+            }else{
+                wait(NULL);
+                close(canal);
+            }
+        }
+    else{
+         if(argc>1 && strcmp(argv[1], "close")==0){
+            if((pid=fork())==0){  
+                pid = getpid();
+            
+                // Mensagem que o cliente escreve para o utilizador
+                // Mensagem format: Running PID valor_pid
+                tamanho_str = sprintf(message,"close %d\n",pid);
                 write(1,message,tamanho_str);
                 
                 // Mensagem que o cliente escreve para o servidor
+                // Mensagem format: Running comands valor_pid valor_timestamp
                 write(canal,message,tamanho_str);
                 int d = dup(canal);
-//                printf("valor do canal --- %d\n",d);
-//                printf("PID[%d] para executar: ",pid);
                 
                 char pid_strg[15];
-                // ler a resposta
-                sprintf(pid_strg,"%d",pid);
+                sprintf(pid_strg,"../fifos/%d",pid);
                 
                 int canal_status = open(pid_strg,O_RDONLY);
                 char buf[2000];
                 int bytes_lidos = 0;
                 while((bytes_lidos = read(canal_status,&buf,2000*sizeof(char)))>0)
+                {
+                    write(1,buf,sizeof(bytes_lidos));
+                }
+                while((bytes_lidos = read(canal,&buf,2000*sizeof(char)))>0)
                 {
                     write(1,buf,sizeof(bytes_lidos));
                 }
@@ -110,8 +145,8 @@ int main(int argc, char ** argv){
                 wait(NULL);
                 close(canal);
             }
-        }
-    else{
+         }
+         else{
         if((pid=fork())==0){
             pid = getpid();
             //Este é o filho
@@ -125,44 +160,36 @@ int main(int argc, char ** argv){
             char inicio_str[10];
             sprintf(inicio_str,"%d",inicio);
             write(heranca[1],inicio_str,sizeof(inicio_str));
-            // Mensagem format: Running PID valor_pid valor_timestamp
-            // Mensagem que o cliente escreve para o utilizador
+
             strcpy(message,"Running ");
             strcpy(message_runningCliente,"Running PID ");
             for(int i = 0; i<count-1;i++){
-//                printf("Este é o valor para iiiiii :: %d\n",i);
-//                printf("comandos[%d]: %s\n",i,comandos[i]);
                 strcat(message,comandos[i]);
                 strcat(message," ");
             
             }
             char resto[30];
             char message_runningCliente_resto[10];
+
             sprintf(resto,"%d %d", pid, mili_seconds_inicial);
-            
             sprintf(message_runningCliente_resto,"%d \n", pid);
             
             strcat(message,resto);
             strcat(message,"\n");
             strcat(message_runningCliente,message_runningCliente_resto);
             
+            // Mensagem que o cliente escreve para o utilizador
+            // Mensagem format: Running PID valor_pid
             write(1,message_runningCliente,sizeof(message_runningCliente));
+
             // Mensagem que o cliente escreve para o servidor
+            // Mensagem format: Running comandos valor_pid valor_timestamp
             write(canal,message,sizeof(message));
-            
-            //int d = dup(canal);
-//            printf("valor do canal --- %d\n",d);
-//            printf("PID[%d] para executar: \n",pid);
-            
-            // FUNCIONALIDADE AVANÇADA ~
-            // Separa os comandos por " | " e depois mete los em comandos
-            // Para cada comando fzr fork e cada filho trata do comando
-            // enquanto que o filho que recebeu o pedido múltiplo fica à espera
-            
-            printf("Inicio da execução: %d\n", inicio);
+
+            //printf("Inicio da execução: %d\n", inicio);
+            sleep(5);
             execvp(comandos[0],comandos);
             
-//            printf("Comandos executados!\n");
         }
         else{
             //Este é o pai
@@ -186,8 +213,8 @@ int main(int argc, char ** argv){
             
             int duracao = (mili_seconds_final - inicio);
             
-            printf("Fim da execução: %d\n", mili_seconds_final);
-            printf("Duração da execução: %d\n", duracao);
+            //printf("Fim da execução: %d\n", mili_seconds_final);
+            //printf("Duração da execução: %d\n", duracao);
             for(int i = 0; i<count-1;i++){
                 //printf("comandos[%d]: %s\n",i,comandos[i]);
                 strcat(message,comandos[i]);
@@ -204,20 +231,25 @@ int main(int argc, char ** argv){
             strcat(message,"\n");
             strcat(message_endedCliente," ms\n");
             
-           printf("Esta é a mensagem de fim da execução: %s\n",message);
+           //printf("Esta é a mensagem de fim da execução: %s\n",message);
             
+            // Mensagem que o cliente escreve para o utilizador
+            // Mensagem format: Ended in duracao
             write(1,message_endedCliente,sizeof(message_endedCliente));
-            write(canal,message,tamanho_str);
-//            printf("Vamos agr fazer o free dos comandos\n");
+
+            // Mensagem que o cliente escreve para o servidor
+            // Mensagem format: Ended comandos valor_pid valor_timestamp
+            write(canal,message,sizeof(message));
+
             while(count>0){
                 free(comandos[count]);
                 count--;
             }
             free(comandos);
             
-//            printf("ehehe acabamos\n");
         }
     }
     // caso n haja mais pedidos fecha cliente
     return 0;
+}
 }
