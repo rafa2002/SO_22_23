@@ -5,7 +5,7 @@ server: bin/monitor
 client: bin/tracer
 
 folders:
-	@mkdir -p src obj bin tmp
+	@mkdir -p src obj bin tmp fifos
 
 bin/monitor: obj/monitor.o
 	gcc -g obj/monitor.o -o bin/monitor
@@ -20,5 +20,5 @@ bin/tracer: obj/tracer.o
 	gcc -Wall -g -c src/tracer.c -o obj/tracer.o
 
 clean:
-	rm -f pipes/* obj/* tmp/* bin/{tracer,monitor}
+	rm -f fifos/* obj/* tmp/* bin/{tracer,monitor}
 	
